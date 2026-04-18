@@ -1,7 +1,7 @@
 app_name = "reyal_telegram"
 app_title = "Reyal Telegram"
 app_publisher = "Patrick Willy"
-app_description = "Telegram notification bridge for Frappe / ERPNext"
+app_description = "Sends Frappe Notifications to Telegram via a bot"
 app_email = "pin@reyal.email"
 app_license = "mit"
 
