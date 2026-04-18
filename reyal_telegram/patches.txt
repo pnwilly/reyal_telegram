@@ -1,0 +1,1 @@
+reyal_telegram.patches.rename_telegram_notification_delivery

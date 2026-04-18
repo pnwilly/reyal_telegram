@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2024-01-01 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "notification_log",
+  "for_user",
+  "telegram_chat_id",
+  "status",
+  "notification_type",
+  "sent_on",
+  "section_content",
+  "title",
+  "message",
+  "open_url",
+  "section_error",
+  "error_message"
+ ],
+ "fields": [
+  {
+   "fieldname": "notification_log",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Notification Log",
+   "options": "Notification Log"
+  },
+  {
+   "fieldname": "for_user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "For User",
+   "options": "User"
+  },
+  {
+   "fieldname": "telegram_chat_id",
+   "fieldtype": "Data",
+   "label": "Telegram Chat ID"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nSent\nFailed\nSkipped"
+  },
+  {
+   "fieldname": "notification_type",
+   "fieldtype": "Data",
+   "label": "Notification Type"
+  },
+  {
+   "fieldname": "sent_on",
+   "fieldtype": "Datetime",
+   "label": "Sent On"
+  },
+  {
+   "fieldname": "section_content",
+   "fieldtype": "Section Break",
+   "label": "Message Content"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Small Text",
+   "label": "Title"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Long Text",
+   "label": "Message"
+  },
+  {
+   "fieldname": "open_url",
+   "fieldtype": "Data",
+   "label": "Open URL"
+  },
+  {
+   "fieldname": "section_error",
+   "fieldtype": "Section Break",
+   "label": "Error Details",
+   "depends_on": "eval:doc.status === 'Failed'"
+  },
+  {
+   "fieldname": "error_message",
+   "fieldtype": "Long Text",
+   "label": "Error Message"
+  }
+ ],
+ "idx": 0,
+ "in_create": 1,
+ "links": [],
+ "modified": "2024-01-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Telegram",
+ "name": "Telegram Delivery Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

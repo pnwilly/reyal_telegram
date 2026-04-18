@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "creation": "2024-01-01 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "telegram_bot_token",
+  "default_telegram_chat_id",
+  "section_defaults",
+  "disable_web_page_preview",
+  "section_types",
+  "send_mentions",
+  "send_assignments",
+  "send_alerts",
+  "send_shares",
+  "send_generic_updates"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "telegram_bot_token",
+   "fieldtype": "Password",
+   "label": "Telegram Bot Token",
+   "mandatory_depends_on": "eval:doc.enabled"
+  },
+  {
+   "fieldname": "default_telegram_chat_id",
+   "fieldtype": "Data",
+   "label": "Default Telegram Chat ID",
+   "description": "Fallback for profiles that are enabled but have no chat ID set"
+  },
+  {
+   "fieldname": "section_defaults",
+   "fieldtype": "Section Break",
+   "label": "Defaults"
+  },
+  {
+   "default": "0",
+   "fieldname": "disable_web_page_preview",
+   "fieldtype": "Check",
+   "label": "Disable Web Page Preview"
+  },
+  {
+   "fieldname": "section_types",
+   "fieldtype": "Section Break",
+   "label": "Notification Types to Send"
+  },
+  {
+   "default": "1",
+   "fieldname": "send_mentions",
+   "fieldtype": "Check",
+   "label": "Mentions"
+  },
+  {
+   "default": "1",
+   "fieldname": "send_assignments",
+   "fieldtype": "Check",
+   "label": "Assignments"
+  },
+  {
+   "default": "1",
+   "fieldname": "send_alerts",
+   "fieldtype": "Check",
+   "label": "Alerts"
+  },
+  {
+   "default": "1",
+   "fieldname": "send_shares",
+   "fieldtype": "Check",
+   "label": "Shares"
+  },
+  {
+   "default": "1",
+   "fieldname": "send_generic_updates",
+   "fieldtype": "Check",
+   "label": "Generic Updates"
+  }
+ ],
+ "idx": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-01-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Telegram",
+ "name": "Telegram Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

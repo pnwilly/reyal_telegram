@@ -1,0 +1,24 @@
+*.pyc
+__pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
+.env
+*.swp
+.DS_Store
+
+# Frappe/build outputs
+*.back
+*.backup
+logs/*.log
+*.pid
+
+# Python
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Node
+node_modules/
