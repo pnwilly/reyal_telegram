@@ -1,6 +1,6 @@
 # Reyal Telegram
 
-Sends ERPNext Notification Log entries to Telegram via a bot, with per-user settings, global configuration, delivery logging, and clean mobile-friendly message formatting.
+Sends Frappe Notifications to Telegram via a bot, with per-user settings, global configuration, delivery logging, and clean mobile-friendly message formatting.
 
 ---
 

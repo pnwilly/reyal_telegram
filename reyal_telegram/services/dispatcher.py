@@ -1,8 +1,7 @@
-"""Entry point for processing new Notification Log entries.
+"""Entry point for processing Notification Log events.
 
-Called via doc_events hook after_insert on Notification Log.
 The actual send is enqueued so that a slow or failing Telegram API call
-never blocks the notification save transaction.
+never blocks the save transaction.
 """
 
 from __future__ import annotations
@@ -25,12 +24,10 @@ def _process(notification_log: str):
 	"""Load settings, validate routing, format, send, and record the delivery."""
 	log = frappe.get_doc("Notification Log", notification_log)
 
-	# Skip if already sent (guard against duplicate enqueues).
 	if log.get("custom_telegram_sent"):
 		return
 
 	settings = frappe.get_single("Telegram Settings")
-
 	if not settings.enabled:
 		return
 
@@ -48,14 +45,15 @@ def _process(notification_log: str):
 		_save_delivery(log, profile, settings, status="Skipped", error="Profile disabled")
 		return
 
-	chat_id = profile.telegram_chat_id or settings.default_telegram_chat_id
+	profile_chat_id = (profile.telegram_chat_id or "").strip()
+	default_chat_id = (settings.default_telegram_chat_id or "").strip()
+	chat_id = profile_chat_id or default_chat_id
 	if not chat_id:
 		_save_delivery(log, profile, settings, status="Skipped", error="No chat ID on profile and no default configured")
 		return
 
 	# Check notification type gate:
 	from reyal_telegram.services.formatter import settings_flag_for_type
-
 	flag = settings_flag_for_type(log.type or "")
 	if not settings.get(flag):
 		_save_delivery(log, profile, settings, status="Skipped", error=f"Type '{log.type}' disabled in settings")
@@ -63,12 +61,10 @@ def _process(notification_log: str):
 
 	# Build message:
 	from reyal_telegram.services.formatter import build_message
-
 	msg = build_message(log)
 
 	# Send:
 	from reyal_telegram.services.sender import send_message
-
 	success, error = send_message(
 		token=token,
 		chat_id=chat_id,
@@ -76,21 +72,40 @@ def _process(notification_log: str):
 		disable_web_page_preview=bool(settings.disable_web_page_preview),
 	)
 
+	# If the profile's own chat ID failed, retry once with the global default:
+	is_fallback = False
+	if not success and profile_chat_id and default_chat_id and profile_chat_id != default_chat_id:
+		_save_delivery(log, profile, settings, status="Failed", msg=msg, chat_id=chat_id, error=error)
+		fallback_msg = _add_fallback_footer(msg, log.for_user)
+		success, error = send_message(
+			token=token,
+			chat_id=default_chat_id,
+			text=fallback_msg["text"],
+			disable_web_page_preview=bool(settings.disable_web_page_preview),
+		)
+		chat_id = default_chat_id
+		msg = fallback_msg
+		is_fallback = True
+
 	if success:
-		_save_delivery(log, profile, settings, status="Sent", msg=msg, chat_id=chat_id)
+		_save_delivery(log, profile, settings, status="Sent", msg=msg, chat_id=chat_id, is_fallback=is_fallback)
 		_mark_log_sent(log)
 	else:
-		_save_delivery(
-			log, profile, settings,
-			status="Failed",
-			msg=msg,
-			chat_id=chat_id,
-			error=error,
-		)
+		_save_delivery(log, profile, settings, status="Failed", msg=msg, chat_id=chat_id, error=error, is_fallback=is_fallback)
 		frappe.log_error(
 			title="Telegram Notification Failed",
 			message=f"Log: {log.name} | User: {log.for_user} | Error: {error}",
 		)
+		if profile.suppress_email_notifications:
+			from reyal_telegram.overrides import send_fallback_email
+			send_fallback_email(log)
+
+
+def _add_fallback_footer(msg: dict, for_user: str) -> dict:
+	from reyal_telegram.services.utils import get_user_display_name
+	name = get_user_display_name(for_user) or for_user
+	footer = f"\n<i>Fallback delivery for {name}</i>"
+	return {**msg, "text": msg["text"] + footer}
 
 
 def _get_profile(user: str | None):
@@ -106,21 +121,19 @@ def _mark_log_sent(log):
 	frappe.db.set_value(
 		"Notification Log",
 		log.name,
-		{
-			"custom_telegram_sent": 1,
-			"custom_telegram_sent_on": now_datetime(),
-		},
+		{"custom_telegram_sent": 1, "custom_telegram_sent_on": now_datetime()},
 		update_modified=False,
 	)
 
 
-def _save_delivery(log, profile, settings, *, status: str, msg: dict | None = None, chat_id: str = "", error: str = ""):
+def _save_delivery(log, profile, settings, *, status: str, msg: dict | None = None, chat_id: str = "", error: str = "", is_fallback: bool = False):
 	try:
 		delivery = frappe.new_doc("Telegram Delivery Log")
 		delivery.notification_log = log.name
 		delivery.for_user = log.for_user
 		delivery.telegram_chat_id = chat_id or profile.telegram_chat_id or settings.default_telegram_chat_id or ""
 		delivery.status = status
+		delivery.is_fallback = 1 if is_fallback else 0
 		delivery.notification_type = log.type or ""
 		if msg:
 			delivery.title = (msg.get("title") or "")[:140]

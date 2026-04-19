@@ -11,20 +11,23 @@ from reyal_telegram.services.utils import (
 	get_user_display_name,
 )
 
-# Matches a leading "@Display Name" at the start of a mention body.
-_LEADING_MENTION_RE = re.compile(r"^@[^\n]+\n?")
-
-# Matches the common "shared <X> <Y> with you" pattern Frappe injects.
-_SHARE_BODY_RE = re.compile(
-	r"shared\s+(?:a\s+)?(?:document\s+)?.*?\s+with\s+you\.?\s*",
-	re.IGNORECASE | re.DOTALL,
-)
+# Strips the leading @mention chip (e.g. "@ Patrick W. ") from mention bodies.
+# Matches @ + optional whitespace + consecutive Titlecase words (the name) only.
+_LEADING_MENTION_RE = re.compile(r"^@\s*(?:[A-Z]\w*\.?\s*)+")
 
 _TYPE_FLAG_MAP = {
 	"Mention": "send_mentions",
 	"Assignment": "send_assignments",
 	"Alert": "send_alerts",
 	"Share": "send_shares",
+	"Energy Point": "send_energy_points",
+}
+
+_ACTION_MAP = {
+	"Mention": "mentioned you",
+	"Assignment": "assigned you",
+	"Alert": "sent an alert",
+	"Share": "shared",
 }
 
 
@@ -34,20 +37,19 @@ def settings_flag_for_type(notification_type: str) -> str:
 
 
 def _resolve_actor(from_user: str | None) -> str:
-	"""Return the best display name for the actor who triggered the notification."""
 	if not from_user:
 		return "Someone"
 	return get_user_display_name(from_user) or from_user
 
 
 def _resolve_target_title(doc_type: str | None, doc_name: str | None) -> str:
-	"""Return a human-readable title for the target document."""
 	if not doc_type or not doc_name:
 		return doc_name or ""
 
 	import frappe
+	from frappe.utils.html_utils import unescape_html
+	from frappe.utils.data import strip_html
 
-	# For User documents, prefer display_name / full_name.
 	if doc_type == "User":
 		full_name = frappe.db.get_value("User", doc_name, "full_name")
 		return full_name or doc_name
@@ -56,7 +58,8 @@ def _resolve_target_title(doc_type: str | None, doc_name: str | None) -> str:
 		title_field = frappe.get_meta(doc_type).get_title_field()
 		if title_field and title_field != "name":
 			title = frappe.db.get_value(doc_type, doc_name, title_field)
-			return title or doc_name
+			if title:
+				return unescape_html(strip_html(str(title))) or doc_name
 	except Exception:
 		pass
 
@@ -80,7 +83,7 @@ def build_message(log) -> dict:
 	url = build_doc_url(doc_type, doc_name, log.link)
 
 	raw_body = clean_text(log.email_content or log.subject or "")
-	body = _clean_body(raw_body, notification_type, actor)
+	body = _clean_body(raw_body, notification_type)
 
 	heading = _build_heading(notification_type, actor, target_title, doc_type, doc_name, url)
 	text = _assemble(heading, body)
@@ -91,6 +94,7 @@ def build_message(log) -> dict:
 		"message": body,
 		"open_url": url,
 	}
+
 
 
 def _build_heading(
@@ -104,6 +108,7 @@ def _build_heading(
 	actor_e = escape_html(actor)
 	target_e = escape_html(target_title or doc_name)
 	doc_type_e = escape_html(doc_type)
+	action = escape_html(_ACTION_MAP.get(notification_type, "updated"))
 
 	if url and target_e:
 		ref = f'<a href="{url}">{target_e}</a>'
@@ -112,21 +117,12 @@ def _build_heading(
 	else:
 		ref = doc_type_e or "a document"
 
-	if notification_type == "Mention":
-		return f"💬 <b>{actor_e}</b> mentioned you in {ref}"
-	elif notification_type == "Assignment":
-		return f"📋 <b>{actor_e}</b> assigned you to {ref}"
-	elif notification_type == "Alert":
-		subject_e = escape_html(target_title or doc_name or "Alert")
-		return f"🔔 <b>{subject_e}</b>"
-	elif notification_type == "Share":
-		return f"📎 <b>{actor_e}</b> shared {ref} with you"
-	else:
-		return f"🔔 <b>{actor_e}</b> updated {ref}"
+	if ref:
+		return f"<b>{actor_e} {action}: {ref}</b>"
+	return f"<b>{actor_e} {action}</b>"
 
 
-def _clean_body(body: str, notification_type: str, actor: str) -> str:
-	"""Remove redundant content injected by Frappe for specific notification types."""
+def _clean_body(body: str, notification_type: str) -> str:
 	if not body:
 		return ""
 
@@ -135,15 +131,13 @@ def _clean_body(body: str, notification_type: str, actor: str) -> str:
 		body = _LEADING_MENTION_RE.sub("", body).strip()
 
 	elif notification_type == "Share":
-		# Frappe body is often just "shared a document ... with you"; suppress it.
-		cleaned = _SHARE_BODY_RE.sub("", body).strip()
-		# Only suppress if nothing meaningful remains.
-		body = cleaned if cleaned else ""
+		# Share body is always redundant ("shared a document ... with you").
+		return ""
 
 	return body
 
 
 def _assemble(heading: str, body: str) -> str:
 	if body:
-		return f"{heading}\n\n{escape_html(body)}"
+		return f"{heading}\n{body}"
 	return heading
