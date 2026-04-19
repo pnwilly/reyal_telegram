@@ -45,7 +45,9 @@ def _process(notification_log: str):
 		_save_delivery(log, profile, settings, status="Skipped", error="Profile disabled")
 		return
 
-	chat_id = profile.telegram_chat_id or settings.default_telegram_chat_id
+	profile_chat_id = (profile.telegram_chat_id or "").strip()
+	default_chat_id = (settings.default_telegram_chat_id or "").strip()
+	chat_id = profile_chat_id or default_chat_id
 	if not chat_id:
 		_save_delivery(log, profile, settings, status="Skipped", error="No chat ID on profile and no default configured")
 		return
@@ -69,6 +71,17 @@ def _process(notification_log: str):
 		text=msg["text"],
 		disable_web_page_preview=bool(settings.disable_web_page_preview),
 	)
+
+	# If the profile's own chat ID failed, retry once with the global default:
+	if not success and profile_chat_id and default_chat_id and profile_chat_id != default_chat_id:
+		_save_delivery(log, profile, settings, status="Failed", msg=msg, chat_id=chat_id, error=error)
+		success, error = send_message(
+			token=token,
+			chat_id=default_chat_id,
+			text=msg["text"],
+			disable_web_page_preview=bool(settings.disable_web_page_preview),
+		)
+		chat_id = default_chat_id
 
 	if success:
 		_save_delivery(log, profile, settings, status="Sent", msg=msg, chat_id=chat_id)
