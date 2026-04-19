@@ -10,6 +10,7 @@
   "for_user",
   "telegram_chat_id",
   "status",
+  "is_fallback",
   "notification_type",
   "sent_on",
   "section_content",
@@ -45,6 +46,13 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "Pending\nSent\nFailed\nSkipped"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_fallback",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Fallback Delivery"
   },
   {
    "fieldname": "notification_type",
