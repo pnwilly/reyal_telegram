@@ -8,7 +8,8 @@
  "field_order": [
   "user",
   "enabled",
-  "telegram_chat_id"
+  "telegram_chat_id",
+  "suppress_email_notifications"
  ],
  "fields": [
   {
@@ -33,6 +34,12 @@
    "in_list_view": 1,
    "label": "Telegram Chat ID"
   },
+  {
+   "default": "0",
+   "fieldname": "suppress_email_notifications",
+   "fieldtype": "Check",
+   "label": "Suppress Email Notifications"
+  }
  ],
  "idx": 0,
  "links": [],

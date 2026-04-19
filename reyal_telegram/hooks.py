@@ -10,10 +10,14 @@ app_license = "mit"
 after_install = "reyal_telegram.setup.install.after_install"
 after_migrate = "reyal_telegram.setup.install.after_install"
 
+# Request hooks:
+
+before_request = "reyal_telegram.overrides.apply_patches"
+
 # Document events:
 
 doc_events = {
 	"Notification Log": {
 		"after_insert": "reyal_telegram.services.dispatcher.handle_notification_log",
-	}
+	},
 }
