@@ -47,6 +47,8 @@ def _resolve_target_title(doc_type: str | None, doc_name: str | None) -> str:
 		return doc_name or ""
 
 	import frappe
+	from frappe.utils.html_utils import unescape_html
+	from frappe.utils.data import strip_html
 
 	if doc_type == "User":
 		full_name = frappe.db.get_value("User", doc_name, "full_name")
@@ -56,7 +58,8 @@ def _resolve_target_title(doc_type: str | None, doc_name: str | None) -> str:
 		title_field = frappe.get_meta(doc_type).get_title_field()
 		if title_field and title_field != "name":
 			title = frappe.db.get_value(doc_type, doc_name, title_field)
-			return title or doc_name
+			if title:
+				return unescape_html(strip_html(str(title))) or doc_name
 	except Exception:
 		pass
 
