@@ -15,6 +15,7 @@
   "send_assignments",
   "send_alerts",
   "send_shares",
+  "send_energy_points",
   "send_generic_updates"
  ],
  "fields": [
@@ -75,6 +76,12 @@
    "fieldname": "send_shares",
    "fieldtype": "Check",
    "label": "Shares"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_energy_points",
+   "fieldtype": "Check",
+   "label": "Energy Points"
   },
   {
    "default": "1",

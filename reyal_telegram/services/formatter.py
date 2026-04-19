@@ -20,6 +20,7 @@ _TYPE_FLAG_MAP = {
 	"Assignment": "send_assignments",
 	"Alert": "send_alerts",
 	"Share": "send_shares",
+	"Energy Point": "send_energy_points",
 }
 
 _ACTION_MAP = {
